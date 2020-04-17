@@ -127,4 +127,17 @@ if __name__ == "__main__":
     if sys.version_info < (3, 6):
         print("Please update the Python version used to run this script to at least Python 3.6")
         exit(1)
-    
+    COMMANDS = ["install", "clean", "help"]
+    if sys.argv[1] not in COMMANDS:
+        print("That is an invalid command. Please run \"alternativepy help\" for commands")
+        exit(1)
+    if sys.argv[1] == "install":
+        if len(sys.argv) != 3:
+            print("Please enter the command in the following format: install <python-version>")
+            exit(1)
+        download_python_version(sys.argv[2])
+    elif sys.argv[1] == "clean":
+        if len(sys.argv) != 2:
+            print("Clean cannot take additional arguments")
+            exit(1)
+        shutil.rmtree(DOWNLOAD_LOCATION)
