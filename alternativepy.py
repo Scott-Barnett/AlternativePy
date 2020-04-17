@@ -76,7 +76,7 @@ def download_python_version(version: str):
     f.close()
     os.chdir(os.path.join(PYTHON_DIR, f"Python-{version}"))
     execute_terminal_command("./configure --enable-optimizations --with-ensurepip=install")
-    execute_terminal_command("./make")
+    execute_terminal_command("make")
     os.chdir("../../..")
 
 if __name__ == "__main__":
