@@ -83,6 +83,20 @@ def execute_terminal_command(command: str) -> bool:
     # Python truthiness states 0 is False, therefore flip it with a Not (0 is success)
     return not process.poll()
 
+def execute_terminal_command_with_output(command: str) -> (bool, str):
+    """
+    Returns the success of the command with the error or output depending on success
+    """
+    try:
+        process = subprocess.Popen(command.split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    # The command you are trying to run does not exist - return failure
+    except FileNotFoundError:
+        return (False, "Invalid Command")
+    stdout, stderr = process.communicate()
+    if not process.poll():
+        return (True, stdout.decode()[:-1])
+    return (False, stderr.decode()[:-1])
+
 def download_python_version(version: str):
     """
     Download a specific Python version and build it, ready to be executed
@@ -119,8 +133,13 @@ def download_python_version(version: str):
     os.chdir(python_dir)
     # Configure the Python install
     execute_terminal_command("./configure --enable-optimizations --with-ensurepip=install")
+    # Obtain cores
+    status, core_output = execute_terminal_command_with_output("nproc")
+    if not status:
+        print(f"Cannot obtain CPU core number\nError:\n{core_output}\nRunning single-threaded")
+        cores = 1
     # Build Python
-    execute_terminal_command("make")
+    execute_terminal_command(f"make -j{cores}")
     os.chdir(BASE_DIRECTORY)
 
 if __name__ == "__main__":
