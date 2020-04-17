@@ -81,7 +81,7 @@ def execute_terminal_command(command: str) -> bool:
         # Print the output so the user knows what's happening
         print(output)
     # Python truthiness states 0 is False, therefore flip it with a Not (0 is success)
-    return not process.Poll()
+    return not process.poll()
 
 def download_python_version(version: str):
     """
@@ -102,19 +102,21 @@ def download_python_version(version: str):
             exit(1)
         # Delete the existing install
         shutil.rmtree(python_dir)
-    # Create a new directory to download into
-    os.mkdir(python_dir)
     # Obtain the Python URL
     python_url = PYTHON_SOURCE_URL.format(version, version)
-    python_location = f"{python_dir}/{version}.tgz"
+    python_location = f"{DOWNLOAD_LOCATION}/{version}.tgz"
     # Download the Python source package as a .tgz
     urllib.request.urlretrieve(python_url, python_location)
     # Open the .tgz and then extract it into the python directory
     f = tarfile.open(python_location, mode="r:gz")
-    f.extractall(python_dir)
+    f.extractall(DOWNLOAD_LOCATION)
     f.close()
+    # Rename the directory to the version
+    os.rename(f"{DOWNLOAD_LOCATION}/Python-{version}", f"{DOWNLOAD_LOCATION}/{version}")
+    # Remove the .tgz
+    os.remove(python_location)
     # Change into the Python directory for building
-    os.chdir(os.path.join(python_dir, f"Python-{version}"))
+    os.chdir(python_dir)
     # Configure the Python install
     execute_terminal_command("./configure --enable-optimizations --with-ensurepip=install")
     # Build Python
