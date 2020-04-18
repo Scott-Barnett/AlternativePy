@@ -13,6 +13,7 @@ PYTHON_SOURCE_URL = PYTHON_BASE_URL + "/{}/Python-{}.tgz"
 PYTHON_ASC_URL = "{}.asc"
 BASE_DIRECTORY = os.path.abspath('.')
 DOWNLOAD_LOCATION = os.path.join(BASE_DIRECTORY, "PythonVersions")
+LINKS_LOCATION = os.path.join(BASE_DIRECTORY, "PythonLinks")
 
 def get_confirmation(prompt: str) -> bool:
     """
@@ -137,10 +138,13 @@ def download_python_version(version: str):
     status, core_output = execute_terminal_command_with_output("nproc")
     if not status:
         print(f"Cannot obtain CPU core number\nError:\n{core_output}\nRunning single-threaded")
-        cores = 1
+        core_output = 1
     # Build Python
-    execute_terminal_command(f"make -j{cores}")
+    execute_terminal_command(f"make -j{core_output}")
     os.chdir(BASE_DIRECTORY)
+    if not os.path.exists(LINKS_LOCATION):
+        os.mkdir(LINKS_LOCATION)
+    execute_terminal_command(f"ln -s {python_dir}/python {LINKS_LOCATION}/altpy-{version}")
 
 if __name__ == "__main__":
     if sys.version_info < (3, 6):
@@ -160,3 +164,5 @@ if __name__ == "__main__":
             print("Clean cannot take additional arguments")
             exit(1)
         shutil.rmtree(DOWNLOAD_LOCATION)
+        shutil.rmtree(LINKS_LOCATION)
+        os.mkdir(LINKS_LOCATION)
