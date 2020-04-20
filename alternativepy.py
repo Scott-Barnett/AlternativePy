@@ -81,9 +81,10 @@ def execute_terminal_command(command: str) -> bool:
         # Obtain the next line of output ready to print (in real time)
         output = process.stdout.readline().decode()[:-1]
         # Print the output so the user knows what's happening
-        print(output)
+        if output != "\n":
+            print(output)
     # Python truthiness states 0 is False, therefore flip it with a Not (0 is success)
-    return not process.poll()
+    return not bool(process.poll())
 
 def execute_terminal_command_with_output(command: str) -> (bool, str):
     """
@@ -99,16 +100,10 @@ def execute_terminal_command_with_output(command: str) -> (bool, str):
         return (True, stdout.decode()[:-1])
     return (False, stderr.decode()[:-1])
 
-def download_python_version(version: str) -> bool:
+def download_python_version(version: str):
     """
     Download a specific Python version, ready to be built
-    """
-
-    # Is the specified Python version valid
-    if not verify_python_version(version):
-        print(f"Invalid Python version: {version}")
-        return False
-    
+    """    
     # Does the download location exist? If not, create it
     if not os.path.exists(DOWNLOAD_LOCATION):
         os.mkdir(DOWNLOAD_LOCATION)
@@ -127,17 +122,11 @@ def download_python_version(version: str) -> bool:
 
     # Remove the .tgz
     os.remove(file_download_location)
-    return True
 
-def delete_version(version: str) -> bool:
+def delete_version(version: str):
     """
     Remove a version from the system
     """
-    # Is the specified Python version valid
-    if not verify_python_version(version):
-        print(f"Invalid Python version: {version}")
-        return False
-
     # Define the install dir
     INSTALL_DIR = os.path.join(DOWNLOAD_LOCATION, version)
     
@@ -147,13 +136,11 @@ def delete_version(version: str) -> bool:
     files = glob.glob(f"{LINKS_LOCATION}/*{version}*")
     for f in files:
         os.remove(f)
-    return True
 
 def build_python_version(version: str) -> bool:
     """
     Take the files that have been extracted and build them into a full compiled Python version
     """
-
     # Define directories
     BUILD_DIR = os.path.join(DOWNLOAD_LOCATION, f"Python-{version}")
     INSTALL_DIR = os.path.join(DOWNLOAD_LOCATION, version)
@@ -163,7 +150,11 @@ def build_python_version(version: str) -> bool:
 
     # Change into the correct folder and execute the build commands
     os.chdir(BUILD_DIR)
-    execute_terminal_command(f"./configure --enable-optimizations --with-ensurepip=install --prefix={INSTALL_DIR} --exec_prefix={INSTALL_DIR}")
+    status = execute_terminal_command(f"./configure --enable-optimizations --with-ensurepip=install --prefix={INSTALL_DIR} --exec_prefix={INSTALL_DIR}")
+
+    if not status:
+        print("An error occurred whilst configuring Python. Exiting...")
+        return False
 
     # Obtain cores that are available to build with
     status, core_output = execute_terminal_command_with_output("nproc")
@@ -172,10 +163,18 @@ def build_python_version(version: str) -> bool:
         core_output = 1
     
     # Build Python
-    execute_terminal_command(f"make -j{core_output}")
+    status = execute_terminal_command(f"make -j{core_output}")
+
+    if not status:
+        print("An error has occurred during the build process. Exiting...")
+        return False
 
     # Install Python to the INSTALL_DIR
-    execute_terminal_command("make altinstall")
+    status = execute_terminal_command("make altinstall")
+
+    if not status:
+        print("An error has occurred during the install process. Exiting...")
+        return False
 
     # Delete the build directory
     shutil.rmtree(BUILD_DIR)
@@ -188,7 +187,6 @@ def create_symlinks(version: str) -> bool:
     """
     Add altpy prefixed *properly versioned* symlinks to the links folder, which is added to the path
     """
-
     # Ensure the links location exists
     if not os.path.exists(LINKS_LOCATION):
         os.mkdir(LINKS_LOCATION)
@@ -203,25 +201,74 @@ def create_symlinks(version: str) -> bool:
             link_name = exe.replace(version[:3], version)
         else:
             link_name = exe
-        execute_terminal_command(f"ln -s {BIN_DIR}/{exe} {LINKS_LOCATION}/altpy-{link_name}")
+        status = execute_terminal_command(f"ln -s {BIN_DIR}/{exe} {LINKS_LOCATION}/altpy-{link_name}")
+        if not status:
+            print("An error has occurred during the symlink-creation process. Exiting...")
+            return False
+    return True
+
+def install(version: str) -> bool:
+    # Is the specified Python version valid
+    if not verify_python_version(version):
+        print(f"Invalid Python version: {version}")
+        return False
+    if os.path.exists(os.path.join(DOWNLOAD_LOCATION, version)):
+        continue_building = get_confirmation("This version already exists. Would you like to redownload and rebuild it (y/n)")
+        if not continue_building:
+            return False
+        delete_version(version)
+    download_python_version(version)
+    status = build_python_version(version)
+    if not status:
+        shutil.rmtree(os.path.join(DOWNLOAD_LOCATION, f"Python-{version}"))
+        return False
+    status = create_symlinks(version)
+    if not status:
+        delete_version(version)
+        return False
+    return True
+
+def clean_versions():
+    versions = os.listdir(DOWNLOAD_LOCATION)
+    if len(versions) == 0:
+        print("No versions to delete. Exiting...")
+        return
+    confirmation = get_confirmation(f"This will remove all installed python versions ({', '.join(versions)})\nAre you sure (y/n)")
+    if not confirmation:
+        print("Cleaning aborted. Exiting...")
+        return
+    for version in versions:
+        delete_version(version)
+
+def display_help():
+    print("Usage: alternativepy <command> <arguments>")
+    print("Commands:\n")
+    print("Install:\nalternativepy install <version>\n")
+    print("Remove:\nalternativepy remove <version>\n")
+    print("Clean (remove all):\nalternativepy clean\n")
+
+def main(arguments: list):
+    if arguments[0] == "install" and len(arguments) == 2:
+        install(arguments[1])
+    elif arguments[0] == "remove" and len(arguments) == 2:
+        if not verify_python_version(arguments[1]):
+            print(f"Invalid Python version: {arguments[1]}")
+            return
+        confirmation = get_confirmation(f"This will remove your python {arguments[1]} install\nAre you sure (y/n)")
+        if not confirmation:
+            print("Removal aborted. Exiting...")
+            return
+        delete_version(arguments[1])
+    elif arguments[0] == "clean" and len(arguments) == 1:
+        clean_versions()
+    else:
+        display_help()
 
 if __name__ == "__main__":
     if sys.version_info < (3, 6):
         print("Please update the Python version used to run this script to at least Python 3.6")
-        exit(1)
-    COMMANDS = ["install", "clean", "help"]
-    if sys.argv[1] not in COMMANDS:
-        print("That is an invalid command. Please run \"alternativepy help\" for commands")
-        exit(1)
-    if sys.argv[1] == "install":
-        if len(sys.argv) != 3:
-            print("Please enter the command in the following format: install <python-version>")
-            exit(1)
-        download_python_version(sys.argv[2])
-    elif sys.argv[1] == "clean":
-        if len(sys.argv) != 2:
-            print("Clean cannot take additional arguments")
-            exit(1)
-        shutil.rmtree(DOWNLOAD_LOCATION)
-        shutil.rmtree(LINKS_LOCATION)
-        os.mkdir(LINKS_LOCATION)
+    elif len(sys.argv) == 1:
+        display_help()
+    else:
+        lower_case = list(map(str.lower, sys.argv[1:]))
+        main(lower_case)
