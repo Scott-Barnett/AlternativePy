@@ -6,7 +6,6 @@ import subprocess
 import shutil
 import urllib.request
 import tarfile
-import glob
 from bs4 import BeautifulSoup
 
 PYTHON_BASE_URL = "https://www.python.org/ftp/python"
@@ -129,13 +128,28 @@ def delete_version(version: str):
     """
     # Define the install dir
     INSTALL_DIR = os.path.join(DOWNLOAD_LOCATION, version)
+
+    # See if this version exists. If not, continue
+    if not os.path.exists(INSTALL_DIR):
+        return
+
+    BIN_DIR = os.path.join(INSTALL_DIR, "bin")
+
+    SYMLINKS = []
+    # Obtain symlink names
+    for exe in os.listdir(BIN_DIR):
+        if len(version) > 3:
+            link_name = exe.replace(version[:3], version)
+        else:
+            link_name = exe
+        SYMLINKS.append(f"altpy-{link_name}")
     
     # Delete install
-    if os.path.exists(INSTALL_DIR):
-        shutil.rmtree(INSTALL_DIR)
-    files = glob.glob(f"{LINKS_LOCATION}/*{version}*")
-    for f in files:
-        os.remove(f)
+    shutil.rmtree(INSTALL_DIR)
+
+    # Delete symlinks
+    for link in SYMLINKS:
+        os.remove(f"{LINKS_LOCATION}/{link}")
 
 def build_python_version(version: str) -> bool:
     """
@@ -253,6 +267,9 @@ def main(arguments: list):
     elif arguments[0] == "remove" and len(arguments) == 2:
         if not verify_python_version(arguments[1]):
             print(f"Invalid Python version: {arguments[1]}")
+            return
+        if not os.path.exists(os.path.join(DOWNLOAD_LOCATION, arguments[1])):
+            print(f"The Python version {arguments[1]} is not currently installed. Exiting...")
             return
         confirmation = get_confirmation(f"This will remove your python {arguments[1]} install\nAre you sure (y/n)")
         if not confirmation:
