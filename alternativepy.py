@@ -6,6 +6,7 @@ import subprocess
 import shutil
 import urllib.request
 import tarfile
+import glob
 from bs4 import BeautifulSoup
 
 PYTHON_BASE_URL = "https://www.python.org/ftp/python"
@@ -98,53 +99,111 @@ def execute_terminal_command_with_output(command: str) -> (bool, str):
         return (True, stdout.decode()[:-1])
     return (False, stderr.decode()[:-1])
 
-def download_python_version(version: str):
+def download_python_version(version: str) -> bool:
     """
-    Download a specific Python version and build it, ready to be executed
+    Download a specific Python version, ready to be built
     """
-    # Check the Python version is valid
+
+    # Is the specified Python version valid
     if not verify_python_version(version):
         print(f"Invalid Python version: {version}")
-        exit(1)
-    # Ensure the specified Download location exists
+        return False
+    
+    # Does the download location exist? If not, create it
     if not os.path.exists(DOWNLOAD_LOCATION):
         os.mkdir(DOWNLOAD_LOCATION)
-    python_dir = os.path.join(DOWNLOAD_LOCATION, version)
-    # Overwrite the existing install if requested, otherwise abort
-    if os.path.exists(python_dir):
-        if not get_confirmation("This python version already exists - would you like to redownload it"):
-            print("Aborting...")
-            exit(1)
-        # Delete the existing install
-        shutil.rmtree(python_dir)
-    # Obtain the Python URL
-    python_url = PYTHON_SOURCE_URL.format(version, version)
-    python_location = f"{DOWNLOAD_LOCATION}/{version}.tgz"
-    # Download the Python source package as a .tgz
-    urllib.request.urlretrieve(python_url, python_location)
+    
+    # Define the download url and the path it will be downloaded to
+    download_url = PYTHON_SOURCE_URL.format(version, version)
+    file_download_location = f"{DOWNLOAD_LOCATION}/{version}.tgz"
+
+    # Download the Python version
+    urllib.request.urlretrieve(download_url, file_download_location)
+
     # Open the .tgz and then extract it into the python directory
-    f = tarfile.open(python_location, mode="r:gz")
+    f = tarfile.open(file_download_location, mode="r:gz")
     f.extractall(DOWNLOAD_LOCATION)
     f.close()
-    # Rename the directory to the version
-    os.rename(f"{DOWNLOAD_LOCATION}/Python-{version}", f"{DOWNLOAD_LOCATION}/{version}")
+
     # Remove the .tgz
-    os.remove(python_location)
-    # Change into the Python directory for building
-    os.chdir(python_dir)
-    # Configure the Python install
-    execute_terminal_command("./configure --enable-optimizations --with-ensurepip=install")
-    # Obtain cores
+    os.remove(file_download_location)
+    return True
+
+def delete_version(version: str) -> bool:
+    """
+    Remove a version from the system
+    """
+    # Is the specified Python version valid
+    if not verify_python_version(version):
+        print(f"Invalid Python version: {version}")
+        return False
+
+    # Define the install dir
+    INSTALL_DIR = os.path.join(DOWNLOAD_LOCATION, version)
+    
+    # Delete install
+    if os.path.exists(INSTALL_DIR):
+        shutil.rmtree(INSTALL_DIR)
+    files = glob.glob(f"{LINKS_LOCATION}/*{version}*")
+    for f in files:
+        os.remove(f)
+    return True
+
+def build_python_version(version: str) -> bool:
+    """
+    Take the files that have been extracted and build them into a full compiled Python version
+    """
+
+    # Define directories
+    BUILD_DIR = os.path.join(DOWNLOAD_LOCATION, f"Python-{version}")
+    INSTALL_DIR = os.path.join(DOWNLOAD_LOCATION, version)
+
+    # Delete the current install if it exists (checks already completed by this point)
+    delete_version(version)
+
+    # Change into the correct folder and execute the build commands
+    os.chdir(BUILD_DIR)
+    execute_terminal_command(f"./configure --enable-optimizations --with-ensurepip=install --prefix={INSTALL_DIR} --exec_prefix={INSTALL_DIR}")
+
+    # Obtain cores that are available to build with
     status, core_output = execute_terminal_command_with_output("nproc")
     if not status:
         print(f"Cannot obtain CPU core number\nError:\n{core_output}\nRunning single-threaded")
         core_output = 1
+    
     # Build Python
     execute_terminal_command(f"make -j{core_output}")
+
+    # Install Python to the INSTALL_DIR
+    execute_terminal_command("make altinstall")
+
+    # Delete the build directory
+    shutil.rmtree(BUILD_DIR)
+
+    # Swap back to the original directory
     os.chdir(BASE_DIRECTORY)
+    return True
+
+def create_symlinks(version: str) -> bool:
+    """
+    Add altpy prefixed *properly versioned* symlinks to the links folder, which is added to the path
+    """
+
+    # Ensure the links location exists
     if not os.path.exists(LINKS_LOCATION):
         os.mkdir(LINKS_LOCATION)
-    execute_terminal_command(f"ln -s {python_dir}/python {LINKS_LOCATION}/altpy-{version}")
+
+    # Define the bin directory
+    BIN_DIR = os.path.join(DOWNLOAD_LOCATION, version, "bin")
+    
+    # Create a symlink for all the bin executables
+    executables = os.listdir(BIN_DIR)
+    for exe in executables:
+        if len(version) > 3:
+            link_name = exe.replace(version[:3], version)
+        else:
+            link_name = exe
+        execute_terminal_command(f"ln -s {BIN_DIR}/{exe} {LINKS_LOCATION}/altpy-{link_name}")
 
 if __name__ == "__main__":
     if sys.version_info < (3, 6):
