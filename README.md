@@ -27,11 +27,11 @@ source $HOME/.bashrc
 ## Removal Instructions
 If you decide you no longer want AlternativePy installed, simply remove that line from your .bashrc and run the `source` command again. Also remove the $HOME/.AlternativePy folder.
 ## Usage
-### Installation
+### Version Installation
 ```
 alternativepy install <version>
 ```
-### Removal
+### Version Removal
 ```
 alternativepy remove <version>
 ```
@@ -39,4 +39,15 @@ alternativepy remove <version>
 ```
 alternativepy clean
 ```
-
+### Using the installed versions
+Simply use altpy-\<normal python command with full version number\>
+For example:
+```
+altpy-python3.8.2
+```
+### Using Virtual Environments
+Virtual environments work the same way you would expect normally, for example:
+```
+altpy-python3.8.2 -m venv venv
+```
+Inside the venv folder, the bin/activate script can be activated. Then the `python` command will link to the altpy python version (in this case 3.8.2)
