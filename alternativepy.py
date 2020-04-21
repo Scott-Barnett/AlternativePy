@@ -14,7 +14,7 @@ PYTHON_SOURCE_URL = PYTHON_BASE_URL + "/{}/Python-{}.tgz"
 PYTHON_ASC_URL = "{}.asc"
 BASE_DIRECTORY = os.path.join(pathlib.Path.home(), ".AlternativePy")
 DOWNLOAD_LOCATION = os.path.join(BASE_DIRECTORY, "PythonVersions")
-LINKS_LOCATION = os.path.join(BASE_DIRECTORY, "Executables")
+LINKS_LOCATION = os.path.join(BASE_DIRECTORY, "bin")
 
 def get_confirmation(prompt: str) -> bool:
     """

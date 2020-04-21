@@ -16,8 +16,8 @@ git clone https://github.com/Scott-Barnett/AlternativePy.git $HOME/.AlternativeP
 ```
 Then add the executable directory to your path as follows, by adding the following to your $HOME/.bashrc
 ```
-if [ -d "$HOME/.AlternativePy/Executables" ]; then
-  PATH="$HOME/.AlternativePy/Executables:$PATH"
+if [ -d "$HOME/.AlternativePy/bin" ]; then
+  PATH="$HOME/.AlternativePy/bin:$PATH"
 fi
 ```
 Update for your current terminal with
