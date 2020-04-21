@@ -2,4 +2,5 @@
 .vscode/
 venv/
 PythonVersions/
-PythonLinks/
+Executables/*
+!Executables/alternativepy
