@@ -14,7 +14,7 @@ Please first clone this repo to your home directory, with the name .AlternativeP
 ```
 git clone https://github.com/Scott-Barnett/AlternativePy.git $HOME/.AlternativePy
 ```
-Then add the executable directory to your path as follows, by adding the following to your $HOME/.bashrc
+Then add the executable directory to your path by inserting the following to your $HOME/.bashrc
 ```
 if [ -d "$HOME/.AlternativePy/bin" ]; then
   PATH="$HOME/.AlternativePy/bin:$PATH"
