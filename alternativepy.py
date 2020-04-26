@@ -255,6 +255,19 @@ def clean_versions():
     for version in versions:
         delete_version(version)
 
+def delete_version_run_checks(version: str):
+    if not verify_python_version(version):
+        print(f"Invalid Python version: {version}")
+        return
+    if not os.path.exists(os.path.join(DOWNLOAD_LOCATION, version)):
+        print(f"The Python version {version} is not currently installed. Exiting...")
+        return
+    confirmation = get_confirmation(f"This will remove your python {version} install\nAre you sure (y/n)")
+    if not confirmation:
+        print("Removal aborted. Exiting...")
+        return
+    delete_version(version)
+
 def display_help():
     print("Usage: alternativepy <command> <arguments>")
     print("Commands:\n")
@@ -266,17 +279,7 @@ def main(arguments: list):
     if arguments[0] == "install" and len(arguments) == 2:
         install(arguments[1])
     elif arguments[0] == "remove" and len(arguments) == 2:
-        if not verify_python_version(arguments[1]):
-            print(f"Invalid Python version: {arguments[1]}")
-            return
-        if not os.path.exists(os.path.join(DOWNLOAD_LOCATION, arguments[1])):
-            print(f"The Python version {arguments[1]} is not currently installed. Exiting...")
-            return
-        confirmation = get_confirmation(f"This will remove your python {arguments[1]} install\nAre you sure (y/n)")
-        if not confirmation:
-            print("Removal aborted. Exiting...")
-            return
-        delete_version(arguments[1])
+        delete_version_run_checks(arguments[1])
     elif arguments[0] == "clean" and len(arguments) == 1:
         clean_versions()
     else:
