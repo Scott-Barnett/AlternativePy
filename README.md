@@ -10,14 +10,14 @@ sudo apt install gcc libbz2-dev libffi-dev libgdbm-compat-dev libgdbm-dev liblzm
 sudo dnf install gcc gdbm-devel libffi-devel libnsl2-devel libtirpc-devel libuuid-devel make ncurses-devel openssl-devel readline-devel sqlite-devel tk-devel xz-devel
 ```
 ## Install Instructions
-Please first clone this repo to your home directory, with the name .AlternativePy as follows:
+Please first clone this repo to a directory of your choice (as shown below, where <DESTINATION_DIR> is the location to be used for the install - I suggest $HOME/.AlternativePy if you have no preference)
 ```
-git clone https://github.com/Scott-Barnett/AlternativePy.git $HOME/.AlternativePy
+git clone https://github.com/Scott-Barnett/AlternativePy.git <DESTINATION_DIR>
 ```
 Then add the executable directory to your path by inserting the following to your $HOME/.bashrc
 ```
-if [ -d "$HOME/.AlternativePy/bin" ]; then
-  PATH="$HOME/.AlternativePy/bin:$PATH"
+if [ -d "$HOME/<DESTINATION_DIR>/bin" ]; then
+  PATH="$HOME/<DESTINATION_DIR>/bin:$PATH"
 fi
 ```
 Update for your current terminal with
@@ -25,7 +25,7 @@ Update for your current terminal with
 source $HOME/.bashrc
 ```
 ## Removal Instructions
-If you decide you no longer want AlternativePy installed, simply remove that line from your .bashrc and run the `source` command again. Also remove the $HOME/.AlternativePy folder.
+If you decide you no longer want AlternativePy installed, simply remove that line from your .bashrc and run the `source` command again. Also remove the <DESTINATION_DIR> folder.
 ## Usage
 ### Version Installation
 ```

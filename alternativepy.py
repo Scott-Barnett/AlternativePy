@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 PYTHON_BASE_URL = "https://www.python.org/ftp/python"
 PYTHON_SOURCE_URL = PYTHON_BASE_URL + "/{}/Python-{}.tgz"
 PYTHON_ASC_URL = "{}.asc"
-BASE_DIRECTORY = os.path.join(pathlib.Path.home(), ".AlternativePy")
+BASE_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
 DOWNLOAD_LOCATION = os.path.join(BASE_DIRECTORY, "PythonVersions")
 LINKS_LOCATION = os.path.join(BASE_DIRECTORY, "bin")
 
