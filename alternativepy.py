@@ -7,7 +7,6 @@ import subprocess
 import shutil
 import urllib.request
 import tarfile
-from bs4 import BeautifulSoup
 
 PYTHON_BASE_URL = "https://www.python.org/ftp/python"
 PYTHON_SOURCE_URL = PYTHON_BASE_URL + "/{}/Python-{}.tgz"
@@ -31,19 +30,14 @@ def get_valid_python_versions() -> list:
     Obtain a list of valid Python versions from the website and return them
     in the form of a list of strings
     """
-    # Download the HTML from the file hosting site
-    html = urllib.request.urlopen(PYTHON_BASE_URL)
-    # Read the HTML into a string and decode it
-    data = html.read().decode()
-    # Load the string into Beautifulsoup, ready for parsing
-    soup = BeautifulSoup(data, 'html.parser')
-    # Find all the link tags
-    links = soup.findAll('a')
+    # Read the HTML into a list (each line is a new line in the HTML). Ignore the first
+    # 4 lines as they do not contain version numbers
+    with urllib.request.urlopen(PYTHON_BASE_URL) as url:
+        html = url.read().decode().splitlines()[4:]
     versions = []
-    # First link is back to the parent directory, so ignore it
-    for link in links[1:]:
-        # Get the value of the text (not the link itself)
-        value = link.get_text()
+    for line in html:
+        # Extract the version number from the HTML line - use the strings and after to find it
+        value = line[len('<a href="'):line.index('/')]
         try:
             # The first digit is only a number if it is a valid python version
             int(value[:1])
@@ -51,7 +45,7 @@ def get_valid_python_versions() -> list:
         except ValueError:
             break
         # Append the valid version to the list (without the / present in the HTML)
-        versions.append(value[:-1])
+        versions.append(value)
     return versions
 
 def verify_python_version(version: str) -> bool:
