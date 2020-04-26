@@ -221,12 +221,15 @@ def install(version: str) -> bool:
     if not verify_python_version(version):
         print(f"Invalid Python version: {version}")
         return False
+    # Check to see if the version already exists
     if os.path.exists(os.path.join(DOWNLOAD_LOCATION, version)):
         continue_building = get_confirmation("This version already exists. Would you like to redownload and rebuild it (y/n)")
         if not continue_building:
             return False
         delete_version(version)
+    # Download the Python version and unpack it
     download_python_version(version)
+    # Build the Python version
     status = build_python_version(version)
     if not status:
         shutil.rmtree(os.path.join(DOWNLOAD_LOCATION, f"Python-{version}"))
