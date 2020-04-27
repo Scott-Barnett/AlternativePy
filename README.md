@@ -16,8 +16,8 @@ git clone https://github.com/Scott-Barnett/AlternativePy.git <DESTINATION_DIR>
 ```
 Then add the executable directory to your path by inserting the following to your $HOME/.bashrc
 ```
-if [ -d "$HOME/<DESTINATION_DIR>/bin" ]; then
-  PATH="$HOME/<DESTINATION_DIR>/bin:$PATH"
+if [ -d "<DESTINATION_DIR>/bin" ]; then
+  PATH="<DESTINATION_DIR>/bin:$PATH"
 fi
 ```
 Update for your current terminal with
